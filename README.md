@@ -6,8 +6,7 @@ con autenticación **JWT**. La predicción la hace un **servicio de IA en Python
 (`../control_asistencias_ia`, FastAPI + Random Forest) que lee el historial de **MongoDB**.
 
 ```
- Celular (Flutter) ──JWT──► Spring Boot ──► MySQL (usuarios, asistencias)
-                                 │   └────► MongoDB (copia de cada asistencia = historial)
+ Celular (Flutter) ──JWT──► Spring Boot ──► MongoDB (usuarios, roles, asistencias)
                                  └──X-API-Key──► IA Python (Random Forest) ──► MongoDB
 ```
 
@@ -90,7 +89,8 @@ lib/
   lo llamaba pero no existía) y validación del QR vencido.
 - **Weka y Power BI eliminados**: `PrediccionFaltaService` y `AsistenciaAlumnoService` ahora llaman
   al servicio de Python (`IaClient`); `IaController` expone `/api/ia/**` a la app (solo coordinador).
-- `HistorialMongoService`: cada asistencia nueva se copia a MongoDB para que el modelo aprenda de ella.
+- **MySQL eliminado**: todo vive en MongoDB (base `asistcontrol`). Las entidades usan ids numéricos
+  (`IdNumericoCallback`, como el AUTO_INCREMENT de MySQL), así que la app y la web no cambiaron.
 - `IAConfig.java`: las herramientas MCP (Docker) son opcionales; sin Docker el backend arranca igual.
 - `application.properties`: `app.jwt.secret`, `server.address=0.0.0.0`; `pom.xml`: librería jjwt.
 
