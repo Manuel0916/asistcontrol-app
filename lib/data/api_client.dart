@@ -25,7 +25,8 @@ class ApiClient {
   /// Se llama cuando el backend responde 401 (token vencido): la app vuelve al login.
   void Function()? onSesionExpirada;
 
-  static const _timeout = Duration(seconds: 15);
+  /// En la nube gratis (Render) el servidor se duerme sin uso y tarda ~1 min en despertar.
+  static const _timeout = Duration(seconds: 90);
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -53,7 +54,7 @@ class ApiClient {
     try {
       res = await request().timeout(_timeout);
     } on TimeoutException {
-      throw ApiException('El servidor no respondió. Revisa la dirección del servidor y tu WiFi.');
+      throw ApiException('El servidor tardó demasiado. Si estaba dormido, intenta de nuevo en unos segundos.');
     } catch (_) {
       throw ApiException(
           'No se pudo conectar con ${AppConfig.baseUrl}. ¿Está encendido el backend y en la misma red?');
@@ -78,6 +79,12 @@ class ApiClient {
     // 403 genérico de Spring Security (trae "status"): rol sin permiso
     if (res.statusCode == 403 && (data is! Map || data.containsKey('status'))) {
       throw ApiException('No tienes permiso para esta acción.', status: 403);
+    }
+
+    // Página de error de la nube mientras el servidor despierta
+    if (res.statusCode >= 502 && res.statusCode <= 504 && data is! Map) {
+      throw ApiException('El servidor está despertando. Intenta de nuevo en unos segundos.',
+          status: res.statusCode);
     }
 
     final msg = data is Map
